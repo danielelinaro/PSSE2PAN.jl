@@ -1,0 +1,13 @@
+name = "PSSE2PAN"
+uuid = "d9de5248-33ea-48d0-9148-afc79d706f0b"
+authors = ["Daniele Linaro <danielelinaro@gmail.com> and contributors"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
