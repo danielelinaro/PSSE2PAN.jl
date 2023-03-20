@@ -3,6 +3,10 @@ uuid = "d9de5248-33ea-48d0-9148-afc79d706f0b"
 authors = ["Daniele Linaro <danielelinaro@gmail.com> and contributors"]
 version = "1.0.0-DEV"
 
+[deps]
+PowerModels = "c36e90e8-916a-50a6-bd94-075b64ef4655"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
 [compat]
 julia = "1"
 
