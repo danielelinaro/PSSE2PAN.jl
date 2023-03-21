@@ -59,7 +59,7 @@ function print_transformer(trans::AbstractDict; base_MVA::Number, bus_base_kv::A
 end
 
 
-function print_generator(gen::AbstractDict; gen_type::Integer, base_MVA::Number, bus_base_kv::AbstractDict,
+function print_generator(gen::AbstractDict; gen_type::Integer, slack::Bool, base_MVA::Number, bus_base_kv::AbstractDict,
         io::IO=stdout, print_out_of_service::Bool=false)
     if gen["gen_status"] == 1 || print_out_of_service
         bus = gen["gen_bus"];
@@ -69,8 +69,13 @@ function print_generator(gen::AbstractDict; gen_type::Integer, base_MVA::Number,
         prating = gen["mbase"]
         pg, qg = gen["pg"] / prating * base_MVA, gen["qg"] / prating * base_MVA
         R, X = gen["zr"], gen["zx"]
-        @printf(io, "%s bus%d powergenerator type=%d prating=%.6e pg=%.6e qg=%.6e vrating=%.6e vg=%.6e ra=%g xdp=%g\n",
-            name, bus, gen_type, prating*1e6, pg, qg, bus_base_kv[bus]*1e3, vg, R, X)
+        @printf(io, "%s bus%d powergenerator type=%d prating=%.6e ", name, bus, gen_type, prating*1e6);
+        if slack
+            @printf(io, "slack=yes ");
+        else
+            @printf(io, "pg=%.6e ", pg);
+        end
+        @printf(io, "qg=%.6e vrating=%.6e vg=%.6e ra=%g xdp=%g\n", qg, bus_base_kv[bus]*1e3, vg, R, X)
     end
 end
 
@@ -79,6 +84,13 @@ function psse_raw_to_pan(raw_file::AbstractString, pan_file::AbstractString; sla
     network = PowerModels.parse_file(raw_file, import_all=true);
     base_MVA = network["baseMVA"];
     bus_base_kv = Dict(bus["bus_i"] => bus["base_kv"] for bus in values(network["bus"]));
+    slack_buses = [bus["bus_i"] for bus in values(network["bus"]) if bus["bus_type"] == 3];
+    if length(slack_buses) > 1
+        error("There are multiple slack buses")
+    end
+    slack_bus = slack_buses[1]
+    @info "Base MVA: " * string(base_MVA) *  " MVA."
+    @info "Bus #" * string(slack_bus) * " is the slack bus."
 
     open(pan_file, "w") do io
         # Buses
@@ -103,7 +115,7 @@ function psse_raw_to_pan(raw_file::AbstractString, pan_file::AbstractString; sla
         end
         # Generators
         for gen in values(network["gen"])
-            print_generator(gen; gen_type=2, base_MVA=base_MVA, bus_base_kv=bus_base_kv, io=io)
+            print_generator(gen; gen_type=2, slack=gen["gen_bus"]==slack_bus, base_MVA=base_MVA, bus_base_kv=bus_base_kv, io=io)
         end
     end
     true
